@@ -148,9 +148,9 @@ class BrachioGraph:
             self.rpi.set_PWM_frequency(15, 50)
 
             # Initialise the pantograph with the motors in the centre of their travel
-            self.rpi.set_servo_pulsewidth(14, self.angles_to_pw_1(-90))
+            self.rpi.set_servo_pulsewidth(14, self.angles_to_pw_1(0))
             sleep(0.3)
-            self.rpi.set_servo_pulsewidth(15, self.angles_to_pw_2(90))
+            self.rpi.set_servo_pulsewidth(15, self.angles_to_pw_2(0))
             sleep(0.3)
 
             # by default we use a wait factor of 0.1 for accuracy
