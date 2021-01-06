@@ -14,10 +14,21 @@ except ModuleNotFoundError:
     force_virtual_mode = True
 
 import tqdm
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 class BrachioGraph:
 
+
+    def correct_pwf(self,pwf):
+        if pwf < 500 :
+            logging.warning(str(pwf) + " < 500")
+            return 500
+        elif pwf > 2600 :
+            logging.warning(str(pwf) + " > 2600")
+            return 2600
+        else: return pwf
     def __init__(
         self,
         inner_arm=8,                # the lengths of the arms
@@ -62,7 +73,19 @@ class BrachioGraph:
         self.arm_2_centre = arm_2_centre
         self.hysteresis_correction_2 = hysteresis_correction_2
 
+
+
+
+
         if servo_1_angle_pws:
+
+            servo_1_shift = self.arm_1_centre  # 修正角度
+
+            new = []
+            for angle, pwf in servo_1_angle_pws:
+                new.append((angle + servo_1_shift, pwf))
+            servo_1_angle_pws = new
+
             servo_1_array = numpy.array(servo_1_angle_pws)
             self.angles_to_pw_1 = numpy.poly1d(
                 numpy.polyfit(
@@ -76,6 +99,15 @@ class BrachioGraph:
             self.angles_to_pw_1 = self.naive_angles_to_pulse_widths_1
 
         if servo_2_angle_pws:
+
+            servo_2_shift = self.arm_2_centre  # 修正角度
+
+            new = []
+            for angle, pwf in servo_2_angle_pws:
+                new.append((angle + servo_2_shift, pwf))
+            servo_2_angle_pws = new
+
+
             servo_2_array = numpy.array(servo_2_angle_pws)
             self.angles_to_pw_2 = numpy.poly1d(
                 numpy.polyfit(
@@ -135,6 +167,8 @@ class BrachioGraph:
         self.previous_pw_1 = self.previous_pw_2 = 0
         self.active_hysteresis_correction_1 = self.active_hysteresis_correction_2 = 0
 
+        self.dumpAngle2PWF()
+
     # methods in this class:
     # drawing
     # line-processing
@@ -146,6 +180,23 @@ class BrachioGraph:
     # calibration
     # manual driving methods
     # reporting methods
+
+
+    def dumpAngle2PWF(self):
+
+        print("Servo1")
+
+
+
+        for a in range(-9+int(self.arm_1_centre / 10),
+                       10+int(self.arm_1_centre / 10)):
+            print(a*10,self.angles_to_pw_1(a*10))
+
+        print("\nServo2")
+        for a in range(-9+int(self.arm_2_centre / 10),
+                       10+int(self.arm_2_centre / 10)):
+            print(a*10,self.angles_to_pw_2(a*10))
+
 
     # ----------------- drawing methods -----------------
 
@@ -532,16 +583,20 @@ class BrachioGraph:
     #  ----------------- hardware-related methods -----------------
 
     def set_pulse_widths(self, pw_1, pw_2):
-
+        logging.debug( "move point to {:.2f}, {:.2f}".format(pw_1,pw_2 ))
         if self.virtual_mode:
 
             if (500 < pw_1 < 2500) and (500 < pw_2 < 2500):
 
-                self.virtual_pw_1 = self.angles_to_pw_1(pw_1)
-                self.virtual_pw_2 = self.angles_to_pw_2(pw_2)
+                self.virtual_pw_1 = pw_1#self.angles_to_pw_1(pw_1)
+                self.virtual_pw_2 = pw_2#self.angles_to_pw_2(pw_2)
 
             else:
-               raise ValueError
+
+                logging.error("ValueError at " + str(pw_1) + " " +str(pw_2))
+
+
+                raise ValueError
 
         else:
 
@@ -607,19 +662,19 @@ class BrachioGraph:
         if hypotenuse > self.INNER_ARM + self.OUTER_ARM:
             raise Exception(f"Cannot reach {hypotenuse}; total arm length is {self.INNER_ARM + self.OUTER_ARM}")
 
-        hypotenuse_angle = math.asin(x/hypotenuse)
+        hypotenuse_angle = math.degrees(math.asin(x/hypotenuse))
 
-        inner_angle = math.acos(
-            (hypotenuse**2+self.INNER_ARM**2-self.OUTER_ARM**2)/(2*hypotenuse*self.INNER_ARM)
+        inner_angle = math.degrees(math.acos(
+            (hypotenuse**2+self.INNER_ARM**2-self.OUTER_ARM**2)/(2*hypotenuse*self.INNER_ARM))
         )
-        outer_angle = math.acos(
-            (self.INNER_ARM**2+self.OUTER_ARM**2-hypotenuse**2)/(2*self.INNER_ARM*self.OUTER_ARM)
+        outer_angle = math.degrees(math.acos(
+            (self.INNER_ARM**2+self.OUTER_ARM**2-hypotenuse**2)/(2*self.INNER_ARM*self.OUTER_ARM))
         )
 
         shoulder_motor_angle = hypotenuse_angle - inner_angle
-        elbow_motor_angle = math.pi - outer_angle
+        elbow_motor_angle = 180 - outer_angle
 
-        return (math.degrees(shoulder_motor_angle), math.degrees(elbow_motor_angle))
+        return (shoulder_motor_angle,elbow_motor_angle)
 
 
     def angles_to_xy(self, shoulder_motor_angle, elbow_motor_angle):
