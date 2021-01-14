@@ -75,7 +75,7 @@ class BrachioGraph:
 
 
 
-
+# TODO : 解決偏移的問題
 
         if servo_1_angle_pws:
 
@@ -98,13 +98,15 @@ class BrachioGraph:
         else:
             self.angles_to_pw_1 = self.naive_angles_to_pulse_widths_1
 
+
+        servo_2_pwf_shift = 10
         if servo_2_angle_pws:
 
             servo_2_shift = self.arm_2_centre  # 修正角度
 
             new = []
             for angle, pwf in servo_2_angle_pws:
-                new.append((angle + servo_2_shift, pwf))
+                new.append(((angle + servo_2_shift-180)*-1  , pwf+servo_2_pwf_shift))
             servo_2_angle_pws = new
 
 
@@ -119,6 +121,9 @@ class BrachioGraph:
 
         else:
             self.angles_to_pw_2 = self.naive_angles_to_pulse_widths_2
+
+
+        self.dumpAngle2PWF()
 
 
         # create the pen object, and make sure the pen is up
@@ -148,9 +153,9 @@ class BrachioGraph:
             self.rpi.set_PWM_frequency(15, 50)
 
             # Initialise the pantograph with the motors in the centre of their travel
-            self.rpi.set_servo_pulsewidth(14, self.angles_to_pw_1(0))
+            self.rpi.set_servo_pulsewidth(14, self.angles_to_pw_1(self.arm_1_centre))
             sleep(0.3)
-            self.rpi.set_servo_pulsewidth(15, self.angles_to_pw_2(0))
+            self.rpi.set_servo_pulsewidth(15, self.angles_to_pw_2(self.arm_2_centre))
             sleep(0.3)
 
             # by default we use a wait factor of 0.1 for accuracy
@@ -167,7 +172,6 @@ class BrachioGraph:
         self.previous_pw_1 = self.previous_pw_2 = 0
         self.active_hysteresis_correction_1 = self.active_hysteresis_correction_2 = 0
 
-        self.dumpAngle2PWF()
 
     # methods in this class:
     # drawing
@@ -533,7 +537,7 @@ class BrachioGraph:
 
     def set_angles(self, angle_1=0, angle_2=0):
         # moves the servo motor
-
+        logging.debug("angle=({}, {})".format(angle_1,angle_2) )
         pw_1, pw_2 = self.angles_to_pulse_widths(angle_1, angle_2)
 
         if pw_1 > self.previous_pw_1:
