@@ -23,15 +23,15 @@ servo_2_angle_pws = [[-90.0, 2438],
                      [72, 633],
                      [90, 500], ]
 
-bounds = [-9, 5, 9, 15]
+bounds = [-8, 3, 8, 13]
 
 
 from brachiograph import BrachioGraph
 
 bg = BrachioGraph(
 
-    inner_arm=7.5,
-    outer_arm=10.5,
+    inner_arm=7.8,
+    outer_arm=8,
     # servo_1_centre=1433,  # shoulder motor centre pulse-width
     # servo_2_centre=1423,  # elbow motor centre pulse-width
     servo_1_angle_pws=servo_1_angle_pws,  # pulse-widths for various angles
@@ -43,9 +43,11 @@ bg = BrachioGraph(
     # hysteresis_correction_1=0,  # hardware error compensation
     # hysteresis_correction_2=0,
     bounds=bounds,  # the maximum rectangular drawing area
-    # wait=None,
-    virtual_mode=True,
-    pw_up=1500,  # pulse-widths for pen up/down
-    pw_down=1100,
+    wait=.05,
+    virtual_mode=False,
+    pw_up=500,  # pulse-widths for pen up/down
+    pw_down=1500,
+    servo1_pin=0,
+    servo2_pin=1,
 
 )
