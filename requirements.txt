@@ -3,3 +3,5 @@ pigpio==1.78
 Pillow==8.0.1
 readchar==2.0.1
 tqdm==4.54.0
+adafruit-circuitpython-servokit
+smbus
